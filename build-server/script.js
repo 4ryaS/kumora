@@ -1,6 +1,23 @@
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const mime = require('mime-types');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const PROJECT_ID = process.env.PROJECT_ID;
+const S3_ACCESS_KEY = process.env.ACCESS_KEY;
+const S3_SECRET_KEY = process.env.SECRET_KEY;
+
+const s3_client = new S3Client({
+    region: 'ap-south-1',
+    credentials: {
+        accessKeyId: S3_ACCESS_KEY,
+        secretAccessKey: S3_SECRET_KEY,
+    }
+});
 
 const init = async () => {
     console.log("Executing script.js");
@@ -28,6 +45,21 @@ const init = async () => {
 
         for (const file_path of build_dir_contents) {
             if (fs.lstatSync(file_path).isDirectory()) continue;
+
+            console.log('Uploading', file_path);
+
+            const command = new PutObjectCommand({
+                Bucket: 'kumora',
+                Key: `__outputs/${PROJECT_ID}/${file_path}`,
+                Body: fs.createReadStream(file_path),
+                ContentType: mime.lookup(file_path)
+            });
+
+            await s3_client.send(command);
+            console.log('Uploaded:', file_path);
         }
+        console.log('Upload Successful!');
     });
 }
+
+init();

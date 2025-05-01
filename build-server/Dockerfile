@@ -25,5 +25,18 @@ WORKDIR /home/app
 # Copy the startup script into the container
 COPY run.sh run.sh
 
+# Copy the Node.js application script
+COPY script.js script.js
+
+# Copy package.json and package-lock.json (if present)
+COPY package*.json .
+
+# Install Node.js dependencies
+RUN npm install
+
+# Make scripts executable
+RUN chmod +x run.sh
+RUN chmod +x script.js
+
 # Run the script when the container starts
 ENTRYPOINT [ "/home/app/run.sh" ]

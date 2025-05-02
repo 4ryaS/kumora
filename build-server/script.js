@@ -23,7 +23,7 @@ const init = async () => {
     console.log("Executing script.js");
     const output_dir_path = path.join(__dirname, 'output');
 
-    // Run npm install and npm run build in the 'output' directory
+    // Run npm install and npm run dist in the 'output' directory
     const process = exec(`cd ${output_dir_path} && npm install && npm run build`);
 
     process.stdout.on('data', (data) => {
@@ -37,20 +37,21 @@ const init = async () => {
     process.on('close', async () => {
         console.log('Build Complete!');
         
-        // Define the path to the build directory
-        const build_dir_path = path.join(__dirname, 'output', 'build');
+        // Define the path to the dist directory
+        const dist_dir_path = path.join(__dirname, 'output', 'dist');
         
-        // Read the contents of the build directory
-        const build_dir_contents = fs.readdirSync(build_dir_path, { recursive: true });
+        // Read the contents of the dist directory
+        const dist_dir_contents = fs.readdirSync(dist_dir_path, { recursive: true });
 
-        for (const file_path of build_dir_contents) {
+        for (const file of dist_dir_contents) {
+            const file_path = path.join(dist_dir_path, file);
             if (fs.lstatSync(file_path).isDirectory()) continue;
 
             console.log('Uploading', file_path);
 
             const command = new PutObjectCommand({
                 Bucket: 'kumora',
-                Key: `__outputs/${PROJECT_ID}/${file_path}`,
+                Key: `__outputs/${PROJECT_ID}/${file}`,
                 Body: fs.createReadStream(file_path),
                 ContentType: mime.lookup(file_path)
             });

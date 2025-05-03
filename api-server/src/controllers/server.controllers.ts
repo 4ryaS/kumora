@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const SERVICE_URI = process.env.SERVICE_URI || '';
 const ECS_ACCESS_KEY = process.env.ACCESS_KEY || '';
 const ECS_SECRET_KEY = process.env.SECRET_KEY || '';
 const SUBNETS = [ process.env.SUBNET1 || '', process.env.SUBNET2 || '', process.env.SUBNET3 || '' ]
@@ -50,6 +51,7 @@ export const build_project = async (request: FastifyRequest, reply: FastifyReply
                         { name: 'PROJECT_ID', value: project_slug },
                         { name: 'ACCESS_KEY', value: ECS_ACCESS_KEY || '' },
                         { name: 'SECRET_KEY', value: ECS_SECRET_KEY || '' },
+                        { name: 'SERVICE_URI', value: SERVICE_URI || '' },
                     ]
                 }
             ]

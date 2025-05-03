@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const mime = require('mime-types');
+const Valkey = require("ioredis");
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -10,6 +11,9 @@ dotenv.config();
 const PROJECT_ID = process.env.PROJECT_ID;
 const S3_ACCESS_KEY = process.env.ACCESS_KEY;
 const S3_SECRET_KEY = process.env.SECRET_KEY;
+const SERVICE_URI = process.env.SERVICE_URI;
+
+const publisher = new Valkey(SERVICE_URI);
 
 const s3_client = new S3Client({
     region: 'ap-south-1',
@@ -19,8 +23,13 @@ const s3_client = new S3Client({
     }
 });
 
+const publish_log = (log) => {
+    publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
+}
+
 const init = async () => {
     console.log("Executing script.js");
+    publish_log("Build Process Started");
     const output_dir_path = path.join(__dirname, 'output');
 
     // Run npm install and npm run dist in the 'output' directory
@@ -28,14 +37,17 @@ const init = async () => {
 
     process.stdout.on('data', (data) => {
         console.log(data.toString());
+        publish_log(data.toString());
     });
 
     process.stdout.on('error', (error) => {
         console.log('Error:', error.toString());
+        publish_log(`error: ${error.toString()}`);
     });
 
     process.on('close', async () => {
         console.log('Build Complete!');
+        publish_log('Build Complete!');
         
         // Define the path to the dist directory
         const dist_dir_path = path.join(__dirname, 'output', 'dist');
@@ -43,11 +55,13 @@ const init = async () => {
         // Read the contents of the dist directory
         const dist_dir_contents = fs.readdirSync(dist_dir_path, { recursive: true });
 
+        publish_log(`Uploading In Progress`);
         for (const file of dist_dir_contents) {
             const file_path = path.join(dist_dir_path, file);
             if (fs.lstatSync(file_path).isDirectory()) continue;
 
             console.log('Uploading', file_path);
+            publish_log(`Uploading: ${file}`);
 
             const command = new PutObjectCommand({
                 Bucket: 'kumora',
@@ -58,8 +72,10 @@ const init = async () => {
 
             await s3_client.send(command);
             console.log('Uploaded:', file_path);
+            publish_log(`Uploaded: ${file_path}`);
         }
         console.log('Upload Successful!');
+        publish_log(`Upload Successful!`);
     });
 }
 

@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const proxy = http_proxy.createProxyServer();
+const proxy = http_proxy.createProxy();
 const BASE_PATH = process.env.BASE_PATH;
 const PORT = process.env.PORT || 8000;
 
@@ -35,6 +35,12 @@ fastify.all('*', async (request, reply) => {
             }
         );
     });
+});
+
+proxy.on('proxyReq', (proxy_req, req, res) => {
+    if (req.url === '/') {
+        proxy_req.path += 'index.html';
+    }
 });
 
 fastify.listen({ port: PORT }, (err, address) => {

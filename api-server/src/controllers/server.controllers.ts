@@ -26,8 +26,8 @@ const config = {
 };
 
 export const build_project = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { git_url } = request.body as { git_url: string };
-    const project_slug = generateSlug();
+    const { git_url, slug } = request.body as { git_url: string; slug: string };
+    const project_slug = slug ? slug : generateSlug();
 
     // Spin the container to build the project
     const command = new RunTaskCommand({

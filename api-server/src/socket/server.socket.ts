@@ -22,7 +22,7 @@ io.on('connection', (socket) => {
 
     socket.on('subscribe', (channel) => {
         socket.join(channel);
-        socket.emit('message:', `joined ${channel}`);
+        socket.emit('message', `joined ${channel}`);
     });
     
     socket.on('disconnect', () => {
@@ -34,7 +34,8 @@ const init_subscription = async () => {
     console.log('Subscribed to logs!');
     subscriber.psubscribe('logs:*');
     subscriber.on('pmessage', (pattern, channel, message) => {
-        io.to(channel).emit('message:', message);
+        // console.log(`Received Redis message on ${channel}: ${message}`);
+        io.to(channel).emit('message', message);
     });
 }
 

@@ -33,25 +33,25 @@ const init = async () => {
     const output_dir_path = path.join(__dirname, 'output');
 
     // Run npm install and npm run dist in the 'output' directory
-    const process = exec(`cd ${output_dir_path} && npm install && npm run build`);
+    const child_proc = exec(`cd ${output_dir_path} && npm install && npm run build`);
 
-    process.stdout.on('data', (data) => {
+    child_proc.stdout.on('data', (data) => {
         console.log(data.toString());
         publish_log(data.toString());
     });
 
-    process.stdout.on('error', (error) => {
+    child_proc.stdout.on('error', (error) => {
         console.log('Error:', error.toString());
         publish_log(`error: ${error.toString()}`);
     });
 
-    process.on('close', async () => {
+    child_proc.on('close', async () => {
         console.log('Build Complete!');
         publish_log('Build Complete!');
-        
+
         // Define the path to the dist directory
         const dist_dir_path = path.join(__dirname, 'output', 'dist');
-        
+
         // Read the contents of the dist directory
         const dist_dir_contents = fs.readdirSync(dist_dir_path, { recursive: true });
 
@@ -76,7 +76,13 @@ const init = async () => {
         }
         console.log('Upload Successful!');
         publish_log(`Upload Successful!`);
+
+        process.exit(0);
     });
 }
 
-init();
+init().catch((err) => {
+    console.error('Fatal Error:', err);
+    publish_log(`Fatal Error: ${err.message}`);
+    process.exit(1); // Exit with error
+});

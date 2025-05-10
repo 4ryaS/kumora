@@ -24,7 +24,7 @@ const s3_client = new S3Client({
 });
 
 const publish_log = (log) => {
-    publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
+    return publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
 }
 
 const init = async () => {
@@ -75,7 +75,7 @@ const init = async () => {
             publish_log(`Uploaded: ${file_path}`);
         }
         console.log('Upload Successful!');
-        publish_log(`Upload Successful!`);
+        await publish_log(`Upload Successful!`);
 
         process.exit(0);
     });

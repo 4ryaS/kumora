@@ -1,49 +1,29 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { generateSlug } from "random-word-slugs";
-import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
-import dotenv from "dotenv";
+import { RunTaskCommand } from "@aws-sdk/client-ecs";
+import { config } from "../config/ecs.config";
 
-dotenv.config();
-
-const SERVICE_URI = process.env.SERVICE_URI || '';
-const ECS_ACCESS_KEY = process.env.ACCESS_KEY || '';
-const ECS_SECRET_KEY = process.env.SECRET_KEY || '';
-const SUBNETS = [ process.env.SUBNET1 || '', process.env.SUBNET2 || '', process.env.SUBNET3 || '' ]
-const SECURITY_GROUPS = [ process.env.SECURITY_GROUP || '' ];
-const PORT = 8000; // Reverse Proxy Port
-
-const ecs_client = new ECSClient({
-    region: 'ap-south-1',
-    credentials: {
-        accessKeyId: ECS_ACCESS_KEY,
-        secretAccessKey: ECS_SECRET_KEY,
-    }
-});
-
-const config = {
-    CLUSTER: process.env.CLUSTER || '',
-    TASK: process.env.TASK || '',
-};
-
-export const init_project = async () => {
-    
+export const init_project = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { project_name, git_url } = request.body as { project_name: string; git_url: string };
 }
 
 export const deploy_project = async (request: FastifyRequest, reply: FastifyReply) => {
     const { git_url, slug } = request.body as { git_url: string; slug: string };
     const project_slug = slug ? slug : generateSlug();
 
+    const ecs_client = config.get_ecs_client();
+
     // Spin the container to build the project
     const command = new RunTaskCommand({
-        cluster: config.CLUSTER,
-        taskDefinition: config.TASK,
+        cluster: config.cluster,
+        taskDefinition: config.task,
         launchType: 'FARGATE',
         count: 1,
         networkConfiguration: {
             awsvpcConfiguration: {
                 assignPublicIp: 'ENABLED',
-                subnets: SUBNETS,
-                securityGroups: SECURITY_GROUPS
+                subnets: config.subnets,
+                securityGroups: config.security_groups
             }
         },
         overrides: {
@@ -53,20 +33,23 @@ export const deploy_project = async (request: FastifyRequest, reply: FastifyRepl
                     environment: [
                         { name: 'GIT_REPOSITORY_URL', value: git_url },
                         { name: 'PROJECT_ID', value: project_slug },
-                        { name: 'ACCESS_KEY', value: ECS_ACCESS_KEY || '' },
-                        { name: 'SECRET_KEY', value: ECS_SECRET_KEY || '' },
-                        { name: 'SERVICE_URI', value: SERVICE_URI || '' },
+                        { name: 'ACCESS_KEY', value: config.ecs_access_key || '' },
+                        { name: 'SECRET_KEY', value: config.ecs_secret_key || '' },
+                        { name: 'SERVICE_URI', value: config.service_uri || '' },
                     ]
                 }
             ]
         }
     });
+
+    // Send the command to ECS
     await ecs_client.send(command);
+
     return reply.send({
         status: 'queued',
         data: {
             project_slug,
-            url: `http://${project_slug}.localhost:${PORT}`
+            url: `http://${project_slug}.localhost:${config.port}`
         }
-    }); 
+    });
 }

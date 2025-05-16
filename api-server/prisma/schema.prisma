@@ -25,6 +25,7 @@ model Project {
   id            String       @id @default(uuid())
   name          String
   git_url       String
+  subdomain     String
   custom_domain String?
   Deployment    Deployment[]
   created_at    DateTime     @default(now())

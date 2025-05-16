@@ -2,9 +2,36 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { generateSlug } from "random-word-slugs";
 import { RunTaskCommand } from "@aws-sdk/client-ecs";
 import { config } from "../config/ecs.config";
+import { project_schema } from "../schemas/project.schemas";
+import { PrismaClient } from "@prisma/client";
+
+const prisma_client = new PrismaClient({});
 
 export const init_project = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { project_name, git_url } = request.body as { project_name: string; git_url: string };
+    const safe_parsed_result = project_schema.safeParse(request.body as { project_name: string; git_url: string });
+
+    if (safe_parsed_result.error) {
+        return reply.status(400).send({
+            error: safe_parsed_result.error.errors
+        });
+    }
+    
+    const { project_name, git_url } = safe_parsed_result.data;
+
+    const project = await prisma_client.project.create({
+        data: {
+            name: project_name,
+            git_url: git_url,
+            subdomain: generateSlug()
+        }
+    });
+
+    return reply.status(200).send({
+        status: 'success',
+        data: {
+            project,
+        }
+    });
 }
 
 export const deploy_project = async (request: FastifyRequest, reply: FastifyReply) => {

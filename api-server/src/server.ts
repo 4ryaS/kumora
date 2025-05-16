@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import cors from '@fastify/cors';
 import dotenv from "dotenv";
-import { server_routes } from "./routes/server.routes";
+import { deployment_routes } from "./routes/deployment.routes";
 import { http_server } from "./socket/server.socket";
 
 dotenv.config();
@@ -15,7 +15,7 @@ server.register(cors, {
     credentials: false,
 });
 
-server.register(server_routes, { prefix: '/api' });
+server.register(deployment_routes, { prefix: '/api' });
 
 http_server.listen(SOCKET_PORT, () => {
     server.log.info(`Socket Server is running at ${SOCKET_PORT}`);

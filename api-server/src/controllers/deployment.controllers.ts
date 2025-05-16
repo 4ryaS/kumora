@@ -25,7 +25,11 @@ const config = {
     TASK: process.env.TASK || '',
 };
 
-export const build_project = async (request: FastifyRequest, reply: FastifyReply) => {
+export const init_project = async () => {
+    
+}
+
+export const deploy_project = async (request: FastifyRequest, reply: FastifyReply) => {
     const { git_url, slug } = request.body as { git_url: string; slug: string };
     const project_slug = slug ? slug : generateSlug();
 

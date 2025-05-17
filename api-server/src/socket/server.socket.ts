@@ -1,15 +1,15 @@
 import { Server } from "socket.io";
 import { createServer } from "http";
 import { createClient } from "@clickhouse/client";
-const { Kafka } = require('kafkajs');
-import * as fs from 'fs';
-import * as path from 'path';
+import { Kafka, EachBatchPayload } from "kafkajs";
+import { v4 as uuidv4 } from "uuid";
+import * as fs from "fs";
+import * as path from "path";
 import { config } from "dotenv";
 
 config();
 
-const CLICKHOUSE_HOST = process.env.CLICKHOUSE_HOST || '';
-const CLICKHOUSE_DATABASE = process.env.CLICKHOUSE_DATABASE || '';
+const CLICKHOUSE_SERVICE_URI = process.env.CLICKHOUSE_SERVICE_URI || '';
 const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME || '';
 const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD || '';
 
@@ -18,11 +18,9 @@ const KAFKA_USERNAME = process.env.KAFKA_USERNAME || '';
 const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD || '';
 
 const clickhouse_client = createClient({
-    host: CLICKHOUSE_HOST,
-    database: CLICKHOUSE_DATABASE,
+    url: CLICKHOUSE_SERVICE_URI,
     username: CLICKHOUSE_USERNAME,
     password: CLICKHOUSE_PASSWORD
-
 });
 
 const kafka = new Kafka({
@@ -61,5 +59,35 @@ io.on('connection', (socket) => {
         console.log(`Client disconnected: ${socket.id}`);
     });
 });
+
+const init_kafka_consumer = async () => {
+    await consumer.connect();
+    await consumer.subscribe({ topics: ['container-logs'] });
+
+    await consumer.run({
+        autoCommit: false,
+        eachBatch: async ({ batch, resolveOffset, heartbeat, commitOffsetsIfNecessary }: EachBatchPayload) => {
+            const messages = batch.messages;
+            console.log(`Received ${messages.length} messages`);
+            
+            for (const message of messages) {
+                const string_message = message.value?.toString() || '';
+                const { DEPLOYMENT_ID, log } = JSON.parse(string_message);
+                
+                await clickhouse_client.insert({
+                    table: 'log_events',
+                    values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log }],
+                    format: 'JSONEachRow'
+                });
+
+                resolveOffset(message.offset);
+                await commitOffsetsIfNecessary();
+                await heartbeat();
+            }
+        }
+    });
+}
+
+init_kafka_consumer();
 
 export { io, http_server };

@@ -2,6 +2,7 @@ const fastify = require('fastify')({
     logger: true
 });
 const http_proxy = require('http-proxy');
+const { PrismaClient } = require("@prisma/client");
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -10,13 +11,19 @@ const proxy = http_proxy.createProxy();
 const BASE_PATH = process.env.BASE_PATH;
 const PORT = process.env.PORT || 8000;
 
+const prisma_client = new PrismaClient({});
+
 // Catch-all route for all methods and paths
 fastify.all('*', async (request, reply) => {
     const host_header = request.headers.host || '';
     const hostname = host_header.split(':')[0];
     const subdomain = hostname.split('.')[0];
 
-    const target = `${BASE_PATH}/${subdomain}`;
+    const project = await prisma_client.project.findFirst({
+        where: { subdomain }
+    });
+
+    const target = `${BASE_PATH}/${project.id}`;
 
     fastify.log.info(`Proxying to: ${target}`);
 

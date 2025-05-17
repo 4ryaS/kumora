@@ -15,7 +15,7 @@ export const get_logs = async (request: FastifyRequest, reply: FastifyReply) => 
     });
 
     const parsed_logs = await logs.json();
-    return reply.send({
+    return reply.status(200).send({
         logs: parsed_logs
     });
 }

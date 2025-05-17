@@ -35,8 +35,50 @@ export const init_project = async (request: FastifyRequest, reply: FastifyReply)
 }
 
 export const deploy_project = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { git_url, slug } = request.body as { git_url: string; slug: string };
-    const project_slug = slug ? slug : generateSlug();
+    const { project_id } = request.body as { project_id: string; };
+
+    const project = await prisma_client.project.findUnique({
+        where: {
+            id: project_id
+        }
+    });
+
+    if (!project) {
+        return reply.status(404).send({
+            error: 'Project Not Found!'
+        });
+    }
+
+    // Check for exisiting deployment
+    const existing_deployment = await prisma_client.deployment.findFirst({
+        where: {
+            project_id: project_id,
+            status: {
+                in: ['QUEUED', 'IN_PROGRESS']
+            }
+        },
+        orderBy: {
+            created_at: 'desc'
+        }
+    });
+
+    if (existing_deployment) {
+        return reply.status(409).send({
+            error: 'A deployment is already in progress for this project.',
+            data: {
+                deployment_id: existing_deployment.id,
+                status: existing_deployment.status
+            }
+        });
+    }
+
+    // No running deployment, proceed to create a new one
+    const deployment = await prisma_client.deployment.create({
+        data: {
+            project: { connect: { id: project_id } },
+            status: 'QUEUED'
+        }
+    });
 
     const ecs_client = config.get_ecs_client();
 
@@ -58,8 +100,9 @@ export const deploy_project = async (request: FastifyRequest, reply: FastifyRepl
                 {
                     name: 'build-server-image',
                     environment: [
-                        { name: 'GIT_REPOSITORY_URL', value: git_url },
-                        { name: 'PROJECT_ID', value: project_slug },
+                        { name: 'GIT_REPOSITORY_URL', value: project.git_url },
+                        { name: 'PROJECT_ID', value: project.id },
+                        { name: 'DEPLOYMENT_ID', value: deployment.id },
                         { name: 'ACCESS_KEY', value: config.ecs_access_key || '' },
                         { name: 'SECRET_KEY', value: config.ecs_secret_key || '' },
                         { name: 'SERVICE_URI', value: config.service_uri || '' },
@@ -75,8 +118,8 @@ export const deploy_project = async (request: FastifyRequest, reply: FastifyRepl
     return reply.send({
         status: 'queued',
         data: {
-            project_slug,
-            url: `http://${project_slug}.localhost:${config.port}`
+            project_id,
+            url: `http://${project_id}.localhost:${config.port}`
         }
     });
 }

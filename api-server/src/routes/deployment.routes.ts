@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { init_project, deploy_project } from "../controllers/deployment.controllers";
+import { get_logs } from "../controllers/logs.controllers";
 
 export const deployment_routes = (server: FastifyInstance) => {
     // POST /project
@@ -7,4 +8,7 @@ export const deployment_routes = (server: FastifyInstance) => {
     
     // POST /deploy
     server.post('/deploy', deploy_project);
+
+    // GET /logs/:deployment_id
+    server.get('/logs/:deployment_id', get_logs);
 }

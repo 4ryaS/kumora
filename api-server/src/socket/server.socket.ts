@@ -14,7 +14,6 @@ const CLICKHOUSE_SERVICE_URI = process.env.CLICKHOUSE_SERVICE_URI || '';
 const KAFKA_SERVICE_URI = process.env.KAFKA_SERVICE_URI || '';
 const KAFKA_USERNAME = process.env.KAFKA_USERNAME || '';
 const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD || '';
-// const KAFKA_CA_PATH = process.env.KAFKA_CA_PATH;
 
 const clickhouse_client = createClient({ url: CLICKHOUSE_SERVICE_URI });
 
@@ -69,7 +68,7 @@ const init_kafka_consumer = async () => {
                 const string_message = message.value?.toString() || '';
                 const { DEPLOYMENT_ID, log } = JSON.parse(string_message);
                 console.log({ log, DEPLOYMENT_ID });
-                
+
                 const { query_id } = await clickhouse_client.insert({
                     table: 'log_events',
                     values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log }],

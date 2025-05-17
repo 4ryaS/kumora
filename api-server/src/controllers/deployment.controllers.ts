@@ -120,8 +120,8 @@ export const deploy_project = async (request: FastifyRequest, reply: FastifyRepl
     return reply.send({
         status: 'queued',
         data: {
-            project_id,
-            url: `http://${project_id}.localhost:${config.port}`
+            deployment_id: deployment.id,
+            url: `http://${deployment.id}.localhost:${config.port}`
         }
     });
 }

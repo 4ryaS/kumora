@@ -10,8 +10,10 @@ dotenv.config();
 
 const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID;
+
 const S3_ACCESS_KEY = process.env.ACCESS_KEY;
 const S3_SECRET_KEY = process.env.SECRET_KEY;
+
 const KAFKA_SERVICE_URI = process.env.KAFKA_SERVICE_URI;
 const KAFKA_USERNAME = process.env.KAFKA_USERNAME;
 const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD;
@@ -28,7 +30,7 @@ const kafka = new Kafka({
     clientId: `build-server-${DEPLOYMENT_ID}`,
     brokers: [KAFKA_SERVICE_URI],
     ssl: {
-        ca: [fs.readFileSync(path.join(__dirname, kafka_ca.pem), 'utf-8')]
+        ca: [fs.readFileSync(path.join(__dirname, 'kafka_ca.pem'), 'utf-8')]
     },
     sasl: {
         username: KAFKA_USERNAME,
@@ -43,7 +45,7 @@ const publish_log = async (log) => {
     return await producer.send({
         topic: `container-logs`,
         messages: [{ key: 'log', value: JSON.stringify({ PROJECT_ID, DEPLOYMENT_ID, log }) }]
-    })
+    });
 }
 
 const init = async () => {

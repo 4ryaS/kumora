@@ -2,3 +2,4 @@ node_modules/
 build/
 .env
 prisma/ca.pem
+src/socket/kafka_ca.pem

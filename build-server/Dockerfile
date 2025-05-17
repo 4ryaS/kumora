@@ -18,6 +18,7 @@ RUN npm install && npm cache clean --force
 # Copy rest of the app files
 COPY run.sh run.sh
 COPY script.js script.js
+COPY kafka_ca.pem kafka_ca.pem
 
 # Make scripts executable
 RUN chmod +x run.sh script.js

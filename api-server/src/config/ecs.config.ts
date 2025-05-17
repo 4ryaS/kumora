@@ -3,7 +3,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const SERVICE_URI = process.env.SERVICE_URI || '';
+const KAFKA_SERVICE_URI = process.env.KAFKA_SERVICE_URI || '';
+const KAFKA_USERNAME = process.env.KAFKA_USERNAME || '';
+const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD || '';
 const REGION = process.env.REGION || '';
 const ECS_ACCESS_KEY = process.env.ACCESS_KEY || '';
 const ECS_SECRET_KEY = process.env.SECRET_KEY || '';
@@ -34,7 +36,9 @@ const get_ecs_client = (): ECSClient => {
 };
 
 export const config = {
-    service_uri: SERVICE_URI,
+    kafka_service_uri: KAFKA_SERVICE_URI,
+    kafka_username: KAFKA_USERNAME,
+    kafka_password: KAFKA_PASSWORD, 
     region: REGION,
     ecs_access_key: ECS_ACCESS_KEY,
     ecs_secret_key: ECS_SECRET_KEY,

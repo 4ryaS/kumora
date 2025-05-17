@@ -105,7 +105,9 @@ export const deploy_project = async (request: FastifyRequest, reply: FastifyRepl
                         { name: 'DEPLOYMENT_ID', value: deployment.id },
                         { name: 'ACCESS_KEY', value: config.ecs_access_key || '' },
                         { name: 'SECRET_KEY', value: config.ecs_secret_key || '' },
-                        { name: 'SERVICE_URI', value: config.service_uri || '' },
+                        { name: 'KAFKA_SERVICE_URI', value: config.kafka_service_uri || '' },
+                        { name: 'KAFKA_USERNAME', value: config.kafka_username || '' },
+                        { name: 'KAFKA_PASSWORD', value: config.kafka_password || '' },
                     ]
                 }
             ]

@@ -10,18 +10,13 @@ import { config } from "dotenv";
 config();
 
 const CLICKHOUSE_SERVICE_URI = process.env.CLICKHOUSE_SERVICE_URI || '';
-const CLICKHOUSE_USERNAME = process.env.CLICKHOUSE_USERNAME || '';
-const CLICKHOUSE_PASSWORD = process.env.CLICKHOUSE_PASSWORD || '';
 
 const KAFKA_SERVICE_URI = process.env.KAFKA_SERVICE_URI || '';
 const KAFKA_USERNAME = process.env.KAFKA_USERNAME || '';
 const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD || '';
+// const KAFKA_CA_PATH = process.env.KAFKA_CA_PATH;
 
-const clickhouse_client = createClient({
-    url: CLICKHOUSE_SERVICE_URI,
-    username: CLICKHOUSE_USERNAME,
-    password: CLICKHOUSE_PASSWORD
-});
+const clickhouse_client = createClient({ url: CLICKHOUSE_SERVICE_URI });
 
 const kafka = new Kafka({
     clientId: `api-server`,
@@ -73,12 +68,15 @@ const init_kafka_consumer = async () => {
             for (const message of messages) {
                 const string_message = message.value?.toString() || '';
                 const { DEPLOYMENT_ID, log } = JSON.parse(string_message);
+                console.log({ log, DEPLOYMENT_ID });
                 
-                await clickhouse_client.insert({
+                const { query_id } = await clickhouse_client.insert({
                     table: 'log_events',
                     values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log }],
                     format: 'JSONEachRow'
                 });
+
+                console.log(query_id);
 
                 resolveOffset(message.offset);
                 await commitOffsetsIfNecessary();

@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import cors from '@fastify/cors';
 import dotenv from "dotenv";
-import { deployment_routes } from "./routes/deployment.routes";
+import deployment_routes from "./routes/deployment.routes";
 import { http_server } from "./socket/server.socket";
 
 dotenv.config();
